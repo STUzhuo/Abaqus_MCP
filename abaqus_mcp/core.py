@@ -83,6 +83,8 @@ def normalize_path_text(path: Path) -> str:
 
 def is_under(path: Path, root: Path) -> bool:
     try:
+        # Resolve the comparison through commonpath instead of string prefix
+        # checks.  This avoids false positives such as C:\work and C:\work-old.
         path_norm = os.path.normcase(os.path.abspath(str(path)))
         root_norm = os.path.normcase(os.path.abspath(str(root)))
         return os.path.commonpath([path_norm, root_norm]) == root_norm
@@ -104,6 +106,8 @@ def ensure_allowed_path(
     path = raw if raw.is_absolute() else (base or config.workspace) / raw
     path = path.resolve(strict=False)
 
+    # The MCP client may be an AI agent, so path validation is the main guardrail
+    # between useful automation and accidental reads outside the project.
     if not any(is_under(path, root) for root in config.allowed_roots):
         roots = ", ".join(str(root) for root in config.allowed_roots)
         raise AbaqusMcpError(f"Path is outside allowed roots: {path}. Allowed roots: {roots}")
@@ -151,6 +155,8 @@ def truncate_text(text: str, max_chars: int) -> str:
 def tail_text_file(path: Path, *, max_bytes: int = 80_000, tail_lines: int | None = None) -> str:
     size = path.stat().st_size
     with path.open("rb") as handle:
+        # Abaqus logs can grow quickly.  Tail reads keep MCP responses responsive
+        # while still surfacing the newest warning or failure marker.
         if max_bytes > 0 and size > max_bytes:
             handle.seek(-max_bytes, os.SEEK_END)
         data = handle.read()
@@ -229,6 +235,9 @@ def validate_extra_abaqus_args(args: Iterable[str] | None) -> list[str]:
         return []
     clean_args = _validate_process_args(args)
     for arg in clean_args:
+        # Abaqus accepts many key=value switches.  We allow that simple shape but
+        # reject path traversal, spaces, and shell-ish constructs.  Users who need
+        # richer launch logic should put it in a reviewed script and call run_script.
         if not EXTRA_ARG_RE.match(arg):
             raise AbaqusMcpError(
                 "Unsupported Abaqus extra argument. Use simple Abaqus options "
@@ -242,6 +251,8 @@ def abaqus_base_command(config: AbaqusMcpConfig) -> list[str]:
     command_path = Path(command)
     suffix = command_path.suffix.lower()
     if suffix in {".bat", ".cmd"}:
+        # subprocess cannot execute batch files portably without cmd.exe.
+        # The user-supplied Abaqus arguments are still passed as separate args.
         return [os.environ.get("COMSPEC", "cmd.exe"), "/d", "/c", command]
     return [command]
 
@@ -356,6 +367,8 @@ def submit_inp_job(
     job_paths = AbaqusPaths(job_name=name, workdir=resolved_workdir)
 
     if wait:
+        # Synchronous mode is useful for small smoke jobs and tests.  Long
+        # production solves should normally use async mode and then job_status.
         result = run_abaqus_foreground(
             config,
             args,
@@ -445,6 +458,9 @@ def parse_status_from_files(paths: AbaqusPaths) -> dict[str, Any]:
     combined_tail = "\n".join(combined_tail_parts)
     combined_upper = combined_tail.upper()
 
+    # Abaqus does not expose one reliable status file across all versions and
+    # failure modes.  We combine conservative signals from .lck/.sta/.log/.msg
+    # instead of trusting any single file.
     if sta.exists():
         sta_text = tail_text_file(sta, max_bytes=80_000)
         matches = list(STA_PROGRESS_RE.finditer(sta_text))
@@ -668,6 +684,8 @@ def extract_odb_summary(
     output_dir.mkdir(parents=True, exist_ok=True)
     output_json = output_dir / f"{odb.stem}.{int(time.time())}.json"
 
+    # ODB access only works inside Abaqus Python, so this normal Python process
+    # delegates to a tiny helper and reads the JSON it writes back.
     args = ["python", str(helper), str(odb), str(output_json)]
     if step_name:
         args.append(step_name)

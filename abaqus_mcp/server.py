@@ -18,6 +18,9 @@ from .core import (
 )
 
 
+# FastMCP builds the tool schema from these functions at import time.  Keep the
+# wrappers thin: validation and Abaqus-specific behavior live in core.py where
+# they can be tested without starting an MCP transport.
 config = AbaqusMcpConfig.from_env()
 mcp = FastMCP("abaqus-mcp", json_response=True)
 
@@ -157,6 +160,8 @@ def diagnose_failed_job(job_name: str, workdir: str | None = None) -> str:
 
 
 def main() -> None:
+    # stdio is the normal MCP desktop-client mode.  The environment switch is
+    # mostly for local debugging with streamable-http.
     transport = os.environ.get("MCP_TRANSPORT", "stdio")
     mcp.run(transport=transport)
 

@@ -82,6 +82,8 @@ def summarize_odb(odb_path, step_name=None):
         if selected_step_name not in odb.steps:
             raise RuntimeError("Step not found: %s" % selected_step_name)
 
+        # Keep the summary deliberately small.  Pulling full field data through
+        # MCP would be slow and usually unnecessary for first-pass diagnostics.
         instances = []
         for name, instance in odb.rootAssembly.instances.items():
             instances.append(
@@ -115,6 +117,8 @@ def summarize_odb(odb_path, step_name=None):
         if "RF" in frame.fieldOutputs:
             measurements["max_reaction_force"] = _max_vector(frame.fieldOutputs["RF"])
         if "S" in frame.fieldOutputs:
+            # Abaqus stores stress as tensors; the MCP tool reports a scalar
+            # Mises maximum because it is the fastest useful health check.
             mises = frame.fieldOutputs["S"].getScalarField(invariant=MISES)
             measurements["max_mises"] = _max_scalar(mises)
         if "PEEQ" in frame.fieldOutputs:

@@ -11,7 +11,7 @@ dist/
 venv/
 .env
 
-# Abaqus generated files and heavy solver outputs
+# Abaqus 生成文件和大型求解结果
 *.odb
 *.cae
 *.jnl
@@ -29,5 +29,5 @@ venv/
 *.sta
 *.com
 
-# Local user configuration
+# 本机用户配置
 mcp_config.json

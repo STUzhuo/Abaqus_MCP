@@ -1,4 +1,4 @@
-"""Abaqus MCP server package."""
+"""Abaqus MCP 服务端包。"""
 
 __all__ = ["__version__"]
 

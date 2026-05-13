@@ -60,7 +60,7 @@ STA_PROGRESS_RE = re.compile(
 
 
 class AbaqusMcpError(ValueError):
-    """Raised for user-correctable MCP tool errors."""
+    """表示用户可以修正的 MCP 工具调用错误。"""
 
 
 @dataclass(frozen=True)
@@ -83,8 +83,8 @@ def normalize_path_text(path: Path) -> str:
 
 def is_under(path: Path, root: Path) -> bool:
     try:
-        # Resolve the comparison through commonpath instead of string prefix
-        # checks.  This avoids false positives such as C:\work and C:\work-old.
+        # 用 commonpath 做目录包含判断，不用字符串前缀比较，避免把
+        # C:\work-old 这类相邻目录误判成 C:\work 的子目录。
         path_norm = os.path.normcase(os.path.abspath(str(path)))
         root_norm = os.path.normcase(os.path.abspath(str(root)))
         return os.path.commonpath([path_norm, root_norm]) == root_norm
@@ -106,8 +106,8 @@ def ensure_allowed_path(
     path = raw if raw.is_absolute() else (base or config.workspace) / raw
     path = path.resolve(strict=False)
 
-    # The MCP client may be an AI agent, so path validation is the main guardrail
-    # between useful automation and accidental reads outside the project.
+    # MCP 客户端很可能是 AI agent，因此路径校验是最重要的护栏：
+    # 既要允许自动化提交作业，也要避免误读项目外的文件。
     if not any(is_under(path, root) for root in config.allowed_roots):
         roots = ", ".join(str(root) for root in config.allowed_roots)
         raise AbaqusMcpError(f"Path is outside allowed roots: {path}. Allowed roots: {roots}")
@@ -155,8 +155,8 @@ def truncate_text(text: str, max_chars: int) -> str:
 def tail_text_file(path: Path, *, max_bytes: int = 80_000, tail_lines: int | None = None) -> str:
     size = path.stat().st_size
     with path.open("rb") as handle:
-        # Abaqus logs can grow quickly.  Tail reads keep MCP responses responsive
-        # while still surfacing the newest warning or failure marker.
+        # Abaqus 日志可能很快变大。只读尾部能保持 MCP 响应轻量，
+        # 同时还能看到最新的 warning 或失败标记。
         if max_bytes > 0 and size > max_bytes:
             handle.seek(-max_bytes, os.SEEK_END)
         data = handle.read()
@@ -235,9 +235,9 @@ def validate_extra_abaqus_args(args: Iterable[str] | None) -> list[str]:
         return []
     clean_args = _validate_process_args(args)
     for arg in clean_args:
-        # Abaqus accepts many key=value switches.  We allow that simple shape but
-        # reject path traversal, spaces, and shell-ish constructs.  Users who need
-        # richer launch logic should put it in a reviewed script and call run_script.
+        # Abaqus 支持很多 key=value 形式的启动选项。这里只放行这种简单格式，
+        # 明确拒绝路径穿越、空格和 shell 风格的拼接。更复杂的启动逻辑应写进
+        # 已审查过的脚本，再通过 run_script 调用。
         if not EXTRA_ARG_RE.match(arg):
             raise AbaqusMcpError(
                 "Unsupported Abaqus extra argument. Use simple Abaqus options "
@@ -251,8 +251,8 @@ def abaqus_base_command(config: AbaqusMcpConfig) -> list[str]:
     command_path = Path(command)
     suffix = command_path.suffix.lower()
     if suffix in {".bat", ".cmd"}:
-        # subprocess cannot execute batch files portably without cmd.exe.
-        # The user-supplied Abaqus arguments are still passed as separate args.
+        # subprocess 不能跨平台地直接执行 batch 文件，所以 Windows 下交给 cmd.exe。
+        # 用户传入的 Abaqus 参数仍然保持为独立参数，不拼成一整段 shell 字符串。
         return [os.environ.get("COMSPEC", "cmd.exe"), "/d", "/c", command]
     return [command]
 
@@ -367,8 +367,8 @@ def submit_inp_job(
     job_paths = AbaqusPaths(job_name=name, workdir=resolved_workdir)
 
     if wait:
-        # Synchronous mode is useful for small smoke jobs and tests.  Long
-        # production solves should normally use async mode and then job_status.
+        # 同步模式适合小型冒烟作业和测试。正式的大作业通常应后台提交，
+        # 再用 job_status 轮询状态。
         result = run_abaqus_foreground(
             config,
             args,
@@ -458,9 +458,8 @@ def parse_status_from_files(paths: AbaqusPaths) -> dict[str, Any]:
     combined_tail = "\n".join(combined_tail_parts)
     combined_upper = combined_tail.upper()
 
-    # Abaqus does not expose one reliable status file across all versions and
-    # failure modes.  We combine conservative signals from .lck/.sta/.log/.msg
-    # instead of trusting any single file.
+    # 不同 Abaqus 版本和失败模式下，并不存在一个绝对可靠的状态文件。
+    # 因此这里综合 .lck/.sta/.log/.msg 的保守信号，而不是只相信单个文件。
     if sta.exists():
         sta_text = tail_text_file(sta, max_bytes=80_000)
         matches = list(STA_PROGRESS_RE.finditer(sta_text))
@@ -684,8 +683,8 @@ def extract_odb_summary(
     output_dir.mkdir(parents=True, exist_ok=True)
     output_json = output_dir / f"{odb.stem}.{int(time.time())}.json"
 
-    # ODB access only works inside Abaqus Python, so this normal Python process
-    # delegates to a tiny helper and reads the JSON it writes back.
+    # ODB 只能在 Abaqus Python 环境里可靠读取，所以普通 Python 进程只负责
+    # 调起一个很小的 helper，再读取 helper 写回的 JSON。
     args = ["python", str(helper), str(odb), str(output_json)]
     if step_name:
         args.append(step_name)
@@ -750,6 +749,6 @@ def abaqus_environment(config: AbaqusMcpConfig, *, probe: bool = True) -> dict[s
                 cwd=config.workspace,
                 timeout_seconds=30,
             )
-        except Exception as exc:  # noqa: BLE001 - this is diagnostic output for the tool caller.
+        except Exception as exc:  # noqa: BLE001 - 这里需要把诊断信息返回给工具调用方。
             result["probe_error"] = str(exc)
     return result

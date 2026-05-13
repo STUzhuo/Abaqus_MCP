@@ -25,17 +25,16 @@ class AbaqusMcpConfig:
 
     @classmethod
     def from_env(cls) -> "AbaqusMcpConfig":
-        # Keep configuration in environment variables so the same package can be
-        # used from Codex, Claude Desktop, or a plain terminal without editing
-        # source files.  The workspace is also the default security boundary.
+        # 配置统一从环境变量读取，这样同一份包可以被 Codex、Claude Desktop
+        # 或普通终端复用，不需要为了不同客户端改源码。workspace 同时也是
+        # 默认的文件访问边界。
         workspace = Path(os.environ.get("ABAQUS_MCP_WORKSPACE", os.getcwd())).expanduser().resolve()
         extra_roots = _split_paths(os.environ.get("ABAQUS_MCP_ALLOWED_DIRS"))
         allowed = [workspace]
         allowed.extend(path.resolve() for path in extra_roots)
 
-        # Many Windows Abaqus installs expose only abaqus.bat.  We still prefer
-        # PATH lookup first, because Linux and managed clusters usually provide
-        # an `abaqus` executable/module wrapper.
+        # 很多 Windows 安装只暴露 abaqus.bat；这里仍然先查 PATH，
+        # 因为 Linux 或集群环境通常会提供 abaqus 可执行文件或模块包装器。
         abaqus_command = (
             os.environ.get("ABAQUS_COMMAND")
             or shutil.which("abaqus")

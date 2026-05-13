@@ -76,6 +76,32 @@ python -m abaqus_mcp.server
 .\start_abaqus_mcp.ps1
 ```
 
+## 部署规则
+
+建议按下面的规则部署和使用：
+
+- **部署位置**：优先部署在安装了 Abaqus 的本机工作站，或受信任的内网计算节点。
+- **传输方式**：日常接入 Codex、Claude Desktop 等桌面客户端时使用默认 `stdio`；`streamable-http` 只建议用于本机调试。
+- **网络边界**：不要把服务直接暴露到公网，不要给不可信用户或不可信 MCP 客户端使用。
+- **工作目录**：必须设置 `ABAQUS_MCP_WORKSPACE`，并把它指向专门的 Abaqus 工作区；不要指向整个磁盘、用户主目录或包含隐私文件的目录。
+- **Abaqus 命令**：必须确认 `ABAQUS_COMMAND` 能在当前机器上启动 Abaqus，例如 `C:\SIMULIA\Commands\abaqus.bat`。
+- **额外目录**：只有确实需要读写其他目录时，才设置 `ABAQUS_MCP_ALLOWED_DIRS`；Windows 下多个目录用分号分隔。
+- **脚本权限**：`run_script` 会执行 Python 脚本，只能运行你自己写过或审查过的脚本。
+- **仓库内容**：Git 仓库只放源码、文档、测试和轻量配置；不要提交 `.odb/.cae/.sim/.prt/.stt/.log/.msg/.dat` 等模型结果或商业数据。
+- **许可证**：Abaqus 安装和许可证由本机或单位许可证服务器管理，本项目不包含任何 Abaqus 程序或许可证文件。
+
+一个典型的 Windows 本地部署流程如下：
+
+```powershell
+cd C:\path\to\abaqus-mcp-server
+python -m pip install -r requirements.txt
+python -m pip install -e .
+
+$env:ABAQUS_MCP_WORKSPACE="C:\path\to\abaqus-workspace"
+$env:ABAQUS_COMMAND="C:\SIMULIA\Commands\abaqus.bat"
+python -m abaqus_mcp.server
+```
+
 ## MCP 客户端配置
 
 复制 `mcp_config.example.json`，然后按你的机器修改路径：

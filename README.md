@@ -6,6 +6,22 @@ This is a local MCP server for running and inspecting Abaqus jobs from MCP-compa
 
 > 说明：本项目不包含 Abaqus、本构模型、Dassault Systemes 文件、示例 `.odb/.cae` 结果或任何许可证。使用前需要你自己的合法 Abaqus 安装和许可证。
 
+## 使用 Agent 自助部署
+
+课题组成员可以把本仓库地址发给 Codex、Claude Code、Cursor、Cline 等本地 agent，让它按 README 自动完成克隆、安装、测试和 MCP 客户端配置。部署机器仍然需要提前安装合法 Abaqus，并能正常使用单位或本机许可证。
+
+可以直接复制下面这段提示词给 agent：
+
+```text
+请从 https://github.com/STUzhuo/Abaqus_MCP.git 克隆项目，并按照 README 在本机部署 Abaqus MCP server。
+我的 Abaqus 命令路径是 C:\SIMULIA\Commands\abaqus.bat；如果本机路径不同，请先帮我检测并确认。
+请创建一个专门的 Abaqus 工作区，设置 ABAQUS_MCP_WORKSPACE，不要把用户主目录或整个磁盘作为工作区。
+请安装依赖、运行 python -m pytest，并生成适用于本机 MCP 客户端的配置示例。
+部署过程中不要提交或上传 .odb、.cae、.sim、.log、.msg、.dat 等模型结果文件。
+```
+
+agent 通常可以完成代码部署和配置检查，但不能替你安装 Abaqus、获取许可证，或判断商业模型和材料数据是否允许公开。
+
 ## 功能特性
 
 - 检查 Abaqus 环境、工作区和允许访问的目录。
@@ -37,8 +53,8 @@ This is a local MCP server for running and inspecting Abaqus jobs from MCP-compa
 ## 安装
 
 ```powershell
-git clone https://github.com/<your-user>/abaqus-mcp-server.git
-cd abaqus-mcp-server
+git clone https://github.com/STUzhuo/Abaqus_MCP.git
+cd Abaqus_MCP
 python -m pip install -r requirements.txt
 python -m pip install -e .
 ```
@@ -213,8 +229,8 @@ python -m pytest
 Install:
 
 ```powershell
-git clone https://github.com/<your-user>/abaqus-mcp-server.git
-cd abaqus-mcp-server
+git clone https://github.com/STUzhuo/Abaqus_MCP.git
+cd Abaqus_MCP
 python -m pip install -r requirements.txt
 python -m pip install -e .
 ```

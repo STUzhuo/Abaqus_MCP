@@ -8,7 +8,7 @@ This is a local MCP server for running and inspecting Abaqus jobs from MCP-compa
 
 ## 使用 Agent 自助部署
 
-课题组成员可以把本仓库地址发给 Codex、Claude Code、Cursor、Cline 等本地 agent，让它按 README 自动完成克隆、安装、测试和 MCP 客户端配置。部署机器仍然需要提前安装合法 Abaqus，并能正常使用单位或本机许可证。
+可以把本仓库地址发给 Codex、Claude Code、Cursor、Cline 等本地 agent，让它按 README 自动完成克隆、安装、测试和 MCP 客户端配置。部署机器仍然需要提前安装合法 Abaqus，并能正常使用单位或本机许可证。
 
 可以直接复制下面这段提示词给 agent：
 

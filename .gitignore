@@ -1,0 +1,33 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.abaqus_mcp/
+build/
+dist/
+.venv/
+venv/
+.env
+
+# Abaqus generated files and heavy solver outputs
+*.odb
+*.cae
+*.jnl
+*.rpy*
+*.rec
+*.lck
+*.sim
+*.prt
+*.mdl
+*.stt
+*.ipm
+*.log
+*.msg
+*.dat
+*.sta
+*.com
+
+# Local user configuration
+mcp_config.json

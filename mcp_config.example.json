@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "abaqus": {
+      "command": "python",
+      "args": [
+        "-m",
+        "abaqus_mcp.server"
+      ],
+      "cwd": "C:\\path\\to\\abaqus-mcp-server",
+      "env": {
+        "ABAQUS_MCP_WORKSPACE": "C:\\path\\to\\abaqus-workspace",
+        "ABAQUS_COMMAND": "C:\\SIMULIA\\Commands\\abaqus.bat"
+      }
+    }
+  }
+}
